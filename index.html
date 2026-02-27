@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Chess Puzzle Lab - Touch Friendly</title>
+
+<!-- Chessboard.js CSS -->
+<link rel="stylesheet" href="https://unpkg.com/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+
+<style>
+body {
+  font-family: Arial;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  background: #f0f0f0;
+}
+
+h1 {
+  text-align: center;
+}
+
+#board {
+  margin: 20px 0;
+  width: 90vw;
+  max-width: 400px;
+}
+
+#controls {
+  margin-top: 10px;
+  text-align: center;
+}
+
+button {
+  padding: 8px 12px;
+  margin: 5px;
+  cursor: pointer;
+  background-color: #0077cc;
+  color: white;
+  border: none;
+  border-radius: 5px;
+}
+
+button:hover {
+  background-color: #005fa3;
+}
+
+#hint, #solution, #fenDisplay {
+  margin-top: 10px;
+  padding: 10px;
+  background: white;
+  border-radius: 5px;
+  width: 90vw;
+  max-width: 400px;
+}
+
+#hint { background-color: #fffbe0; }
+#solution { background-color: #e0ffe0; }
+</style>
+</head>
+<body>
+
+<h1>Chess Puzzle Lab</h1>
+<div id="board"></div>
+
+<div id="controls">
+  <button onclick="prevPuzzle()">Prev Puzzle</button>
+  <button onclick="nextPuzzle()">Next Puzzle</button>
+  <button onclick="resetBoard()">Reset Board</button>
+  <button onclick="showHint()">Get Hint</button>
+  <button onclick="showSolution()">Show Solution</button>
+  <button onclick="showFen()">Show FEN</button>
+</div>
+
+<div id="hint"></div>
+<div id="solution"></div>
+<div id="fenDisplay"></div>
+
+<!-- Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/1.0.0/chess.min.js"></script>
+<script src="https://unpkg.com/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+
+<script>
+let game = new Chess();
+let board;
+let puzzles = [];
+let currentPuzzle = 0;
+
+// Initialize board with touch support
+function initBoard() {
+  board = Chessboard('board', {
+    draggable: true,
+    position: 'start',
+    pieceTheme: 'https://unpkg.com/chessboardjs@1.0.0/img/chesspieces/wikipedia/{piece}.png',
+    onDragStart: function(source, piece) {
+      if (game.game_over()) return false;
+      if ((game.turn() === 'w' && piece.search(/^b/) !== -1) ||
+          (game.turn() === 'b' && piece.search(/^w/) !== -1)) return false;
+    },
+    onDrop: function(source, target) {
+      let move = game.move({from: source, to: target, promotion: 'q'});
+      if (move === null) return 'snapback';
+    },
+    onSnapEnd: function() {
+      board.position(game.fen());
+    },
+    responsive: true // ensures the board scales on resize
+  });
+}
+
+// Load puzzles from JSON
+fetch('puzzles.json')
+  .then(res => res.json())
+  .then(data => {
+    puzzles = data;
+    loadPuzzle(0);
+    initBoard();
+  })
+  .catch(err => console.error('Error loading puzzles:', err));
+
+// Load puzzle by index
+function loadPuzzle(index) {
+  if (index < 0 || index >= puzzles.length) return;
+  currentPuzzle = index;
+  let p = puzzles[index];
+  game.load(p.fen);
+  board.position(p.fen);
+  document.getElementById('hint').innerText = '';
+  document.getElementById('solution').innerText = '';
+  document.getElementById('fenDisplay').innerText = '';
+}
+
+// Navigate puzzles
+function nextPuzzle() { loadPuzzle(currentPuzzle + 1); }
+function prevPuzzle() { loadPuzzle(currentPuzzle - 1); }
+
+// Buttons
+function resetBoard() { loadPuzzle(currentPuzzle); }
+function showHint() { document.getElementById('hint').innerText = "Hint: " + puzzles[currentPuzzle].hint; }
+function showSolution() { document.getElementById('solution').innerText = "Solution: " + puzzles[currentPuzzle].solution; }
+function showFen() { document.getElementById('fenDisplay').innerText = game.fen(); }
+
+// Make board responsive on window resize
+window.addEventListener('resize', () => {
+  board.resize();
+});
+</script>
+
+</body>
+</html>
