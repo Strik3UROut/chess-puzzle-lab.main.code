@@ -5,11 +5,11 @@
 <title>Chess Puzzle Lab - Touch Friendly</title>
 
 <!-- Chessboard.js CSS -->
-<link rel="stylesheet" href="https://unpkg.com/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
 
 <style>
 body {
-  font-family: Arial;
+  font-family: Arial, sans-serif;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -78,8 +78,8 @@ button:hover {
 <div id="fenDisplay"></div>
 
 <!-- Libraries -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/1.0.0/chess.min.js"></script>
-<script src="https://unpkg.com/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chess.js@0.10.3/chess.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
 
 <script>
 let game = new Chess();
@@ -87,7 +87,7 @@ let board;
 let puzzles = [];
 let currentPuzzle = 0;
 
-// Initialize board with touch support
+// Initialize board
 function initBoard() {
   board = Chessboard('board', {
     draggable: true,
@@ -104,34 +104,23 @@ function initBoard() {
     },
     onSnapEnd: function() {
       board.position(game.fen());
-    },
-    responsive: true // ensures the board scales on resize
+    }
   });
 }
-
-// Load puzzles from JSON
-fetch('puzzles.json')
-  .then(res => res.json())
-  .then(data => {
-    puzzles = data;
-    loadPuzzle(0);
-    initBoard();
-  })
-  .catch(err => console.error('Error loading puzzles:', err));
 
 // Load puzzle by index
 function loadPuzzle(index) {
   if (index < 0 || index >= puzzles.length) return;
   currentPuzzle = index;
   let p = puzzles[index];
-  game.load(p.fen);
-  board.position(p.fen);
+  game.load(p.fen);  // load FEN
+  board.position(p.fen);  // set board
   document.getElementById('hint').innerText = '';
   document.getElementById('solution').innerText = '';
   document.getElementById('fenDisplay').innerText = '';
 }
 
-// Navigate puzzles
+// Navigation
 function nextPuzzle() { loadPuzzle(currentPuzzle + 1); }
 function prevPuzzle() { loadPuzzle(currentPuzzle - 1); }
 
@@ -141,9 +130,21 @@ function showHint() { document.getElementById('hint').innerText = "Hint: " + puz
 function showSolution() { document.getElementById('solution').innerText = "Solution: " + puzzles[currentPuzzle].solution; }
 function showFen() { document.getElementById('fenDisplay').innerText = game.fen(); }
 
-// Make board responsive on window resize
+// Responsive resize
 window.addEventListener('resize', () => {
-  board.resize();
+  if (board) board.resize();
+});
+
+// Load puzzles.json after DOM is ready
+document.addEventListener("DOMContentLoaded", () => {
+  initBoard();
+  fetch('puzzles.json')
+    .then(res => res.json())
+    .then(data => {
+      puzzles = data;
+      if (puzzles.length > 0) loadPuzzle(0);
+    })
+    .catch(err => console.error('Error loading puzzles:', err));
 });
 </script>
 
